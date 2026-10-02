@@ -24,7 +24,6 @@ def sd_to_pdb(input_file, output_file):
     except Exception as e:
         print(f"[FAILED] {input_file}: {e}")
 
-
 def convert_pockets(structure_path, domains):
     """
     Convert all pocket .sd files of each domain to PDB.
@@ -37,7 +36,6 @@ def convert_pockets(structure_path, domains):
         print(domain)
         for pocket in sorted((Path(structure_path) / domain).glob("*.sd")):
             sd_to_pdb(pocket, pocket.with_suffix(".pdb"))
-
 
 def select_reference(domains, random_seed = 42):
     """
@@ -79,7 +77,6 @@ def run_TM_align(path_to_reference, path_to_structure, matrix_file, tmalign=TMAL
         raise RuntimeError(f"Could not find RMSD in TMalign output for {path_to_structure}")
     return float(match.group(1))
 
-
 def read_mtx(file):
     """
     Read a TMalign matrix file. Returns translation t (3,) and rotation u (3, 3).
@@ -93,7 +90,6 @@ def read_mtx(file):
     t = np.array(f[:,0])
     u = np.array([f[0][1:], f[1][1:], f[2][1:]])
     return t, u
-
 
 def superpose_file(input_file, output_file, matrix_file):
     """
@@ -120,10 +116,9 @@ def superpose_file(input_file, output_file, matrix_file):
     io.set_structure(structure)
     io.save(str(output_file))   
 
-
 def superpose_structures(pfam_path, domains, reference):
     """
-    Superpose all structures and centroids of each domain onto the reference.
+    Superpose all structures and centroids of each domain onto the reference structure.
     
     Args:
         pfam_path (str | Path): Folder of the Pfam family (<outpath>/<pfam>)
@@ -155,7 +150,6 @@ def superpose_structures(pfam_path, domains, reference):
 
     pd.Series(rmsd_values, name="RMSD").rename_axis("domain").to_csv(pfam_path / "RMSD.tsv", sep="\t")
 
-
 def read_centroid(pdb_file):
     """
     Return the (x, y, z) coordinates of the single atom in a centroid PDB file.
@@ -175,14 +169,12 @@ def cluster_centroids(pfam_path, metric="euclidean", distance = 10, linkage = "c
     """
     Cluster the superposed pocket centroids of a Pfam family by their coordinates.
 
-    Saves <pfam_path>/<pfam>_pockets.csv with one row per cluster:
-    Pfam domain, Pocket (cluster id), Included pockets (';'-separated domain/pocket).
-
     Args:
         pfam_path (str | Path): Folder of the Pfam family (<outpath>/<pfam>)
         metric (str): Distance metric between centroids
         distance (float): Distance threshold (Å) above which clusters are not merged
         linkage (str): Linkage criterion ("complete", "average", "single", "ward")
+
     """
 
     pfam = pfam_path.name
@@ -217,17 +209,12 @@ def cluster_centroids(pfam_path, metric="euclidean", distance = 10, linkage = "c
 
 def find_representative(pockets, descriptors):
     """
-    Choose the medoid of a cluster: the pocket with the smallest mean cosine
-    distance to the other pockets of the cluster.
+    Compute the cosine distance between pockets of the same cluster and select the one with the lowest cosine distance. 
 
     Args:
         pockets (list): Names of the pockets in the cluster
-        descriptors (dict): Pocket name -> descriptor vector (128 values)
+        descriptors (dict): Pocket : PocketVec descriptor
 
-    Returns:
-        list: [representative, mean pairwise distance in the cluster,
-               mean distance of the representative to the others]
-        (distances are NaN for single-pocket clusters)
     """
 
     if len(pockets) == 1:
@@ -242,10 +229,7 @@ def find_representative(pockets, descriptors):
     
 def cluster_centroids_lig(pfam_path, metric="euclidean", distance = 10, linkage = "complete"):
     """
-    Cluster the superposed pocket centroids of a Pfam family by their coordinates.
-
-    Saves <pfam_path>/<pfam>_pockets.csv with one row per cluster:
-    Pfam domain, Pocket (cluster id), Included pockets (';'-separated domain/pocket).
+    Cluster the superposed pocket centroids of a Pfam domain by their coordinates.
 
     Args:
         pfam_path (str | Path): Folder of the Pfam family (<outpath>/<pfam>)
@@ -289,6 +273,18 @@ def cluster_centroids_lig(pfam_path, metric="euclidean", distance = 10, linkage 
     coordinates.to_csv(pfam_path / f"{pfam}_ligand.tsv", index=False, sep="\t")
 
 def cluster_pockets(pockets, descriptors, outfile, metric="cosine", distance = 0.22, linkage="complete"):
+    """
+    Cluster PocketVec descriptors.
+
+    Args:
+        pockets (list): Names of the pockets to cluster. 
+        descriptors (dict): Pocket : PocketVec descriptor
+        outfile (str): File to save the results. 
+        metric (str): Distance metric between centroids
+        distance (float): Distance threshold above which clusters are not merged
+        linkage (str): Linkage criterion ("complete", "average", "single", "ward")
+    """
+
     reduced_pockets = [i for i in descriptors.keys() if i in pockets]
     reduced_descriptors = [descriptors[i] for i in reduced_pockets]
     labels = AgglomerativeClustering(metric=metric, distance_threshold = distance, n_clusters=None, linkage=linkage).fit_predict(reduced_descriptors)
@@ -296,14 +292,27 @@ def cluster_pockets(pockets, descriptors, outfile, metric="cosine", distance = 0
     clusters_df = pd.DataFrame(clusters, columns= ["Pocket", "Cluster"]).sort_values(by="Pocket")
     clusters_df.to_csv(outfile, sep="\t", index= False)
     
-
 def compute_buriedness_threshold(lig_metrics, percentage=99):
+    """
+    Given a reference sample, compute the value for which the required percentage is included.
+
+    Args:
+        lig_metrics (Series): metrics of the reference sample. 
+        percentage (int): percentage of the included sample. 
+    """
     lig = np.array(lig_metrics)
     threshold = np.percentile(lig, 100 - percentage)
     return threshold
-    
 
 def apply_novelty_filter(pockets, metrics, threshold):
+    """
+    Given a set of pockets, filter out those that do not follow the novelty startegy's requirements. 
+    Args:
+        pockets (Dataframe): pockets to filter. 
+        metrics (Dataframe): Dataframe containing relevant information for the filtering. 
+        threshold (int): pre-computed buriedness threshold. 
+    """
+
     pockets = pockets.copy()
     pockets["Best docking score"] = pockets["Pocket"].map(
         metrics.set_index("Pocket")["Best docking score"]
@@ -322,9 +331,16 @@ def apply_novelty_filter(pockets, metrics, threshold):
         & (pockets["Buriedness"] >= threshold)
     )
     return pockets[mask]
-
     
 def compute_mahalanobis(pockets, lig_data, metrics = ["Best docking score" ,"Buriedness", "Prank score"]):
+    """
+    Given a set of pockets and a reference sample, compute the Mahalanobis distance. 
+    Args:
+        pockets (Dataframe): pockets we want to compute the Mahalanobis distance for. 
+        lig_data (Dataframe): reference sample. 
+        metrics (list): metrics used to compute the Mahalanobis distance. 
+    """
+
     ref_data = lig_data[metrics].values
     pocket_data = pockets[metrics].values
     
@@ -341,6 +357,14 @@ def compute_mahalanobis(pockets, lig_data, metrics = ["Best docking score" ,"Bur
     pockets["Mahalanobis"] = [i for i in distances]
     
 def choose_novel_representatives(filtered_pockets, outfile, num_select = 2):
+    """
+    Given a set of pockets, select the required number according to the novel selection strategy. 
+    Args:
+        filtered_pockets (Dataframe): pockets from which we want to select. 
+        outfile (str): file to save the selection results. 
+        num_select (int): number of pockets to be selected. 
+    """
+
     pockets = filtered_pockets.copy()
     pockets["Rank"] = pockets["Mahalanobis"].rank(ascending=True)
     cluster = re.fullmatch(r"cluster_(\d+)_novel_selection", outfile.stem).group(1)
@@ -359,6 +383,14 @@ def choose_novel_representatives(filtered_pockets, outfile, num_select = 2):
     to_write_df.to_csv(outfile, sep="\t", index=False)
 
 def apply_experimental_filter(pockets, metrics, threshold):
+    """
+    Given a set of pockets, filter out those that do not follow the experimental startegy's requirements. 
+    Args:
+        pockets (Dataframe): pockets to filter. 
+        metrics (Dataframe): Dataframe containing relevant information for the filtering. 
+        threshold (int): pre-computed buriedness threshold. 
+    """
+
     pockets = pockets.copy()
     pockets["Best docking score"] = pockets["Pocket"].map(
         metrics.set_index("Pocket")["Best docking score"]
@@ -377,8 +409,17 @@ def apply_experimental_filter(pockets, metrics, threshold):
     )
     return pockets[mask]
 
-
 def select_pocket(data, num_select, to_write, type_data, cluster):
+    """
+    Given a subset of pockets, select the required number of them according to their Mahalanobis distance. 
+    Args:
+        data (Dataframe): pockets from which we want to select. 
+        num_select (int): number of pockets to be selected. 
+        to_write(list): contains the already selected pockets. 
+        type_data (str): origin of the pocket (SGC, PDB or AF2).
+        cluster (str): cluster number. 
+    """
+
     to_select = range(0, min(len(data), num_select))
     num_select -= min(len(data), num_select)
 
@@ -390,6 +431,14 @@ def select_pocket(data, num_select, to_write, type_data, cluster):
     return num_select
 
 def choose_experimental_representatives(filtered_pockets, outfile, num_select = 2):
+    """
+    Given a set of pockets, select the required number according to the experimental selection strategy. 
+    Args:
+        filtered_pockets (Dataframe): pockets from which we want to select. 
+        outfile (str): file to save the selection results. 
+        num_select (int): number of pockets to be selected. 
+    """
+
     pockets = filtered_pockets.copy()
     pockets["Rank"] = pockets["Mahalanobis"].rank(ascending=True)
     cluster = re.fullmatch(r"cluster_(\d+)_experimental_selection", outfile.stem).group(1)
