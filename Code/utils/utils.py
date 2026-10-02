@@ -9,6 +9,7 @@ from Bio.PDB import *
 from sklearn.cluster import AgglomerativeClustering
 from scipy.spatial.distance import cdist
 from scipy.spatial.distance import mahalanobis
+import shutil
 
 def sd_to_pdb(input_file, output_file):
     """
@@ -50,9 +51,27 @@ def select_reference(domains, random_seed = 42):
     ref_dom = random.sample(domains, 1)[0]
     return ref_dom
 
-TMALIGN = "/aloy/home/acomajuncosa/programs/TM_align/TMalign"  # modify for your installation
+def find_tmalign():
+    """
+    Locates the TMalign executable installed in the active conda environment.
+    """
 
-def run_TM_align(path_to_reference, path_to_structure, matrix_file, tmalign=TMALIGN):
+    for name in ("TMalign", "tmalign"):
+        found = shutil.which(name)
+        if found:
+            return found
+
+    bin_dir = Path(sys.executable).parent
+    for name in ("TMalign", "tmalign"):
+        if (bin_dir / name).is_file():
+            return str(bin_dir / name)
+
+    raise FileNotFoundError(
+        "TMalign not found. Install it with `conda install -c bioconda tmalign` "
+        "(it is included in environment.yml) and make sure the notebook uses that environment."
+    )
+
+def run_TM_align(path_to_reference, path_to_structure, matrix_file, tmalign=None):
     """
     Align a structure onto the reference with TMalign, writting the matrix file and returning the RMSD.
 
@@ -60,9 +79,11 @@ def run_TM_align(path_to_reference, path_to_structure, matrix_file, tmalign=TMAL
         path_to_reference (str | Path) : Path of the reference structure. 
         path_to_structure (str | Path) : Path to the structure we want to superimpose. 
         matrix_file (str | Path) : Path to where we want to write the superposition matrix.
-        tmalign (str | Path) : Path to the local TMalign installation. 
+        tmalign (str | Path, optional): Path to a TMalign executable. By default, the one from the active environment is used.
     
     """
+    tmalign = str(tmalign) if tmalign else find_tmalign()
+
     result = subprocess.run(
         [tmalign, str(path_to_structure), str(path_to_reference), "-m", str(matrix_file)],
         capture_output=True, text=True,
