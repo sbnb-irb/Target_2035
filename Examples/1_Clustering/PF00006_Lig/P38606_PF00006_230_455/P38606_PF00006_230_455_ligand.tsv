@@ -1,0 +1,4 @@
+Pocket	Method	X	Y	Z	Cluster	Ligand-associated
+P38606_PF00006_230_455_CTR_0	LIG	-11.327	-12.414	3.223	0	
+P38606_PF00006_230_455_fpocket_1	PD	-12.266	5.301	2.243	1	False
+P38606_PF00006_230_455_fpocket_3	PD	-5.627	-12.625	1.657	0	True
