@@ -20,6 +20,8 @@ The `PocketVec` directory contains the protein-, domain-, and pocket-level data 
 | `AF2_LIG_pocket.tsv` | For each pocket located in a domain: pocket buriedness, minimum pLDDT, and pocket-centroid coordinates (`X`, `Y`, `Z`). |
 | `AF2_PD_pocket.tsv` | For each pocket located in a domain: druggability score, Prank rescore, pocket buriedness, minimum pLDDT, and pocket-centroid coordinates (`X`, `Y`, `Z`). |
 
+The domain structures (both in .pdb and .mol2 format) and centroids (in .sd format) of all pockets for which we have generated a PocketVec descriptor can be found [here](https://drive.google.com/file/d/12Av0mMMowIHhXtF3JiZr7EZlrO4iq3cS/view?usp=sharing). 
+
 ## 2. Descriptors
 
 The `Descriptors` directory contains the updated PocketVec descriptors generated for each dataset (PDB-LIG, PDB-PD, AF2-LIG and AF2-PD).
