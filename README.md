@@ -9,7 +9,7 @@ Here, we first present an update of the PocketVec descriptors, which approximate
 
 Further methodological and conceptual details are provided in the associated publication:
 
-        **Add publication**
+        García-Cerqueda, M., Schapira, M., Antolin, A. A., Edwards, A. M., & Aloy, P. (2026). Pocket similarity-guided selection of protein targets for systematic protein–ligand dataset generation. bioRxiv [Preprint], 2026.11.10.765562. https://doi.org/10.64898/2026.11.10.765562
 
 This repository contains the updated PocketVec descriptors and the results presented in the manuscript. It also contains the required code to define Pfam-level pockets and select their representatives, identify ligand-associated pockets, and perform the pocket clustering and representative-selection procedures.
 
