@@ -53,4 +53,4 @@ The analysis is divided into two notebooks:
 - `1_Clustering.ipynb`: exemplifies, for a selected Pfam domain, how to define its Pfam-level pockets, obtain the pocket representative and identify if the pockets are associated to ligands. It also demonstartes the clustering of the representative pcokets. 
 - `2_Selection.ipynb`: exemplifies, for a given cluster, how to select the representative pockets according to the two selection strategies. 
 
-Both notebooks use functions defined in `utils.py` and data provided in the `Examples/` and `Results/` directories.s
+Both notebooks use functions defined in `utils.py` and data provided in the `Examples/` and `Results/` directories.
