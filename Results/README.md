@@ -62,7 +62,3 @@ The `Selection` directory contains the files used for pocket clustering and sele
 | `full_dataset.tsv` | For each pocket in the AF2-PD dataset: assigned cluster, whether the corresponding Pfam-level pocket, Pfam domain, or protein has a ligand; whether the protein or domain has a structure in the PDB; and whether the domain is being structurally determined by the SGC. |
 | `novel_selection.tsv` | For each selected pocket obtained using the novel selection strategy: cluster it belongs to, cluster rank, and Mahalanobis distance. |
 | `experimental_selection.tsv` | For each selected pocket obtained using the experimental selection strategy: cluster it belongs to, cluster rank, Mahalanobis distance, and structure origin (`SGC`, `PDB`, or `AF2`). |
-
-## 5. Abbreviations
-
-**AF2**, AlphaFold 2; **PDB**, Protein Data Bank; **Pfam**, protein family database; **SGC**, Structural Genomics Consortium; **pLDDT**, predicted Local Distance Difference Test.
